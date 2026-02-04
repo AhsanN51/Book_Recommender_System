@@ -5,7 +5,7 @@ __pycache__/
 .ig
 # C extensions
 *.so
-.env
+.
 .gradio
 # Distribution / packaging
 .Python
