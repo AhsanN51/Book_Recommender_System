@@ -16,45 +16,72 @@ Discover books through an intuitive interface that combines powerful semantic se
 
 ## 🚀 Features
 
-- **Semantic Search**: Find books by describing what you're looking for (e.g., "a story about destiny and self-discovery").
-- **Category Filtering**: Narrow down results to specific genres (Fiction, Self-Help, Science, etc.).
-- **Mood-Based Sorting**: Sort recommendations by emotional intensity (**Happy**, **Anger**, **Thriller**, **Sadness**, **Surprise**).
-- **Interactive Interface**: Sleek web UI built with [Gradio](https://gradio.app/) with a glassmorphism theme.
-- **Dynamic Previews**: View book covers, authors, and truncated descriptions at a glance.
+- **Semantic Search**: Find books by describing what you're looking for (e.g., "a lonely space explorer discovery").
+- **Category Filtering**: Narrow down results to specific genres or themes.
+- **Mood-Based Sorting**: Sort recommendations by emotional intensity (Happy, Anger, Thriller, Sadness, Surprise).
+- **Interactive Web Interface**: Built with Gradio for a seamless user experience.
 
 ## 🏗️ Project Architecture
 
-The system follows a Retrieval-Augmented Generation (RAG) inspired architecture for semantic search:
+The system utilizes a multi-layered approach to provide accurate and personalized recommendations:
 
 ```mermaid
 graph TD
-    subgraph "Phase 1: Indexing (Offline)"
-        Data[Tagged Descriptions TXT] --> Loader[Text Loader]
-        Loader --> Splitter[Character Splitter]
-        Splitter --> MistralEmbed[MistralAI Embeddings]
-        MistralEmbed --> ChromaDB[(ChromaDB Vector Store)]
+    %% Define Styles
+    classDef user fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef logic fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef data fill:#dfd,stroke:#333,stroke-width:2px;
+    classDef ui fill:#ffd,stroke:#333,stroke-width:2px;
+
+    subgraph "Phase 1: Knowledge Base Preparation"
+        RawCSV[(Raw Books CSV)] --> Notebooks[EDA & Semantic Analysis Notebooks]
+        Notebooks --> CleanedCSV[(Cleaned & Categorized CSV)]
+        CleanedCSV --> TaggedText[Tagged Description TXT]
     end
 
-    subgraph "Phase 2: Recommendation (Online)"
-        UserInput([User Query]) --> Gradio[Gradio UI]
-        Gradio --> QueryEmbed[Query Embedding]
-        QueryEmbed --> Search[Similarity Search]
-        ChromaDB -.-> Search
-        Search --> TopIDs[Retrieved ISBNs]
-        TopIDs --> Join[Metadata Join]
-        CSV[(Book Metadata CSV)] --> Join
-        Join --> Logic[Filtering & Sorting Logic]
-        Logic --> Gallery[Gradio Gallery]
-        Gallery --> Gradio
+    subgraph "Phase 2: Recommendation Engine"
+        User([User])
+        User -->|Query + Filters| Gradio[Gradio Interface]
+        
+        Gradio -->|Pillar 1: Semantic Search| Mistral[MistralAI Embeddings]
+        Mistral -->|Vector Search| Chroma[(ChromaDB)]
+        
+        Gradio -->|Pillar 2: Category Filter| PandasLogic[Pandas Filtering]
+        CleanedCSV -.-> PandasLogic
+        
+        Gradio -->|Pillar 3: Mood Sorting| SentimentLogic[Mood Sorting Logic]
+        CleanedCSV -.-> SentimentLogic
+        
+        Chroma -->|Ranked ISBNs| Recommender[Recommendation Orchestrator]
+        PandasLogic -->|Genre Constraints| Recommender
+        SentimentLogic -->|Emotional Tone| Recommender
+        
+        Recommender -->|Curated Gallery| ResultsWindow[Gradio Result Gallery]
+        ResultsWindow --> User
+
+        class User user
+        class Gradio ui
+        class Mistral logic
+        class Chroma data
+        class PandasLogic logic
+        class SentimentLogic logic
+        class Recommender logic
+        class ResultsWindow ui
     end
 ```
 
-### Technical Workflow
-1.  **Vector Store Initialization**: A pre-processed file (`tagged_isbn13_description.txt`) is indexed into **ChromaDB** using **MistralAI Embeddings**.
-2.  **Semantic Retrieval**: Similarity search retrieves the most relevant book IDs based on user input.
-3.  **Metadata Enrichment**: Joins results with the primary dataset (`cleaned_classified_withsemanys_books.csv`) for full metadata.
-4.  **Filtering & Sorting**: Applies category constraints and mood-based ranking (e.g., sorting by 'joy' for "Happy" tone).
-5.  **Gallery Rendering**: Formats and displays results in an 8-column responsive gallery.
+### Technical Workflow & Logic
+
+Our recommender system is built on three distinct pillars that work in harmony:
+
+1.  **Pillar 1: Text Description Usage (Semantic Search)**  
+    Uses **MistralAI** to turn your natural language descriptions into high-dimensional vectors. These are matched against a **ChromaDB** vector store to find books with thematically similar descriptions, even if keywords don't match exactly.
+2.  **Pillar 2: Custom Categories Usage**  
+    Integrates a strict filtering layer that constraints the semantic results to the user's selected genre (e.g., Fiction, Science, etc.). This ensures that "a story about a detective" only returns books in the relevant category.
+3.  **Pillar 3: Book Mood Usage**  
+    Leverages pre-calculated sentiment scores (Joy, Anger, Fear, Sadness, Surprise) derived from semantic analysis of book descriptions. The system dynamically sorts the final recommendations based on the selected "tone" to match the user's current mood.
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -64,7 +91,7 @@ graph TD
 | **Vector DB** | ChromaDB |
 | **LLM/Embeddings** | MistralAI |
 | **Orchestration** | LangChain |
-| **Data Analysis -EDA, Semantic Analysis, and Vector Search** | Pandas, NumPy |
+| **Data Analysis - EDA, Semantic Analysis, and Vector Search** | Pandas, NumPy |
 
 ## 📂 Project Structure
 
